@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurantes con Móvil</title>
+  <style>
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #333; /* más visible */
+    }
+  </style>
+</head>
+<body>
+  <h1>Restaurantes con Teléfono</h1>
+
+  <button id="seleccionarTodos">Seleccionar todos</button>
+  <button id="procesarWhatsapp">Enviar WhatsApp</button>
+
+  <ul id="listaRestaurantes">
+    <!-- Aquí se rellenarán los elementos vía JS -->
+  </ul>
+
+  <script>
+    let listaGlobal = [];
+
+    // Cargar los datos al cargar la página
+    fetch('/restaurantes_movil')
+      .then(res => res.json())
+      .then(data => {
+        const lista = document.getElementById('listaRestaurantes');
+        listaGlobal = data;
+        data.forEach((restaurante, index) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <label>
+              <input type="checkbox" class="chk" data-index="${index}">
+              ${restaurante.nombre} - ${restaurante.telefono}
+            </label>
+          `;
+          lista.appendChild(li);
+        });
+      });
+
+    // Botón para seleccionar todos
+    document.getElementById('seleccionarTodos').addEventListener('click', () => {
+      document.querySelectorAll('.chk').forEach(chk => chk.checked = true);
+    });
+
+    // Botón para enviar por WhatsApp
+    document.getElementById('procesarWhatsapp').addEventListener('click', () => {
+      const seleccionados = [];
+      document.querySelectorAll('.chk:checked').forEach(chk => {
+        const idx = chk.getAttribute('data-index');
+        seleccionados.push(listaGlobal[idx]);
+      });
+
+      fetch('/api/procesar_whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datos: seleccionados })
+      })
+      .then(res => res.json())
+      .then(respuesta => {
+        alert(respuesta.mensaje || respuesta.error);
+      });
+    });
+  </script>
+</body>
+</html>

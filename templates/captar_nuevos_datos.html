@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Captar Nuevos Datos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* Estilos generales */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    /* Contenedor para el interruptor (fuente y seleccionar todo) */
+    .source-switch {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .source-switch button {
+      padding: 15px 25px;
+      margin: 0 10px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #e0e0e0;
+      color: #333;
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+    .source-switch button:hover {
+      background-color: #d0d0d0;
+    }
+    .source-switch button.active {
+      background-color: #4CAF50;
+      color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    /* Botones de acciones (Recopilar y Procesar) centrados */
+    .action-buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .action-buttons button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 1.1em;
+      cursor: pointer;
+    }
+    /* Estilos para la tabla */
+    .table-container {
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tr.selected {
+      background-color: #f0f8ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Captar Nuevos Datos</h1>
+  
+  <!-- Interruptor de fuente y botón "Seleccionar Todo" -->
+  <div class="source-switch">
+    <button id="btnGoogle" class="btn active">Google</button>
+    <button id="btnJustEat" class="btn">JustEat</button>
+    <button id="btnSelectAll" class="btn">Seleccionar Todo</button>
+  </div>
+  
+  <!-- Botones de acciones -->
+  <div class="action-buttons">
+    <button id="btnRecopilar" class="btn">Recopilar Datos</button>
+    <button id="btnProcesar" class="btn">Procesar</button>
+  </div>
+  
+  <!-- Contenedor de la tabla -->
+  <div class="table-container">
+    <table>
+      <thead id="table-head">
+        <!-- Encabezado generado dinámicamente -->
+      </thead>
+      <tbody id="table-body">
+        <!-- Filas generadas dinámicamente; inicialmente vacía -->
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Inclusión del script JavaScript -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

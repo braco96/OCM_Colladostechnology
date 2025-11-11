@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr  7 17:02:48 2025
+@author: braco
+"""
+
+import time
+import json
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from urllib.parse import urlparse
+
+
+class whatsapp:
+    def __init__(self, driver, lista_restaurantes, db_manager):
+        self.driver = driver
+        self.lista_restaurantes = lista_restaurantes
+        self.db_manager = db_manager
+        self.resultados = []
+        self.mensaje_base = (
+            "Buenas tardes, disculpe las molestias. He observado que su negocio *{nombre}* "
+            "trabaja con los siguientes intermediarios: {intermediarios}. "
+            "Aparecen en los siguientes enlaces:\n{enlaces}"
+        )
+
+    def extraer_intermediarios(self, urls_intermediarios):
+        intermediarios_info = []
+
+        if urls_intermediarios:
+            if isinstance(urls_intermediarios, str):
+                try:
+                    urls_intermediarios = json.loads(urls_intermediarios)
+                except Exception:
+                    urls_intermediarios = [urls_intermediarios]
+            if isinstance(urls_intermediarios, list):
+                for url in urls_intermediarios:
+                    url_lower = url.lower()
+                    if "just-eat" in url_lower:
+                        texto = "JustEat"
+                    elif "uber" in url_lower:
+                        texto = "Uber"
+                    elif "glovoapp" in url_lower:
+                        texto = "Glovo"
+                    elif "instagram" in url_lower:
+                        texto = "Instagram"
+                    elif "facebook" in url_lower:
+                        texto = "Facebook"
+                    else:
+                        domain = urlparse(url).netloc
+                        domain = domain.replace("www.", "").split('.')[0]
+                        texto = domain.capitalize()
+                    intermediarios_info.append((texto, url))
+        return intermediarios_info
+
+    def crear_mensaje(self, restaurante):
+        nombre = restaurante.get("nombre", "su restaurante")
+        urls_intermediarios = restaurante.get("urls_intermediarios", [])
+        intermediarios_info = self.extraer_intermediarios(urls_intermediarios)
+        if not intermediarios_info:
+            return None  # si no hay intermediarios, no se genera mensaje
+
+        intermediarios_str = ", ".join(i[0] for i in intermediarios_info)
+        enlaces_str = "\n".join(f"{i[0]}: {i[1]}" for i in intermediarios_info)
+
+        mensaje_final = self.mensaje_base.format(
+            nombre=nombre,
+            intermediarios=intermediarios_str,
+            enlaces=enlaces_str
+        )
+        return mensaje_final
+
+    def abrir_whatsapp_web(self):
+        print("Abriendo WhatsApp Web...")
+        self.driver.get("https://web.whatsapp.com")
+        print("Por favor, escanee el código QR para iniciar sesión...")
+        WebDriverWait(self.driver, 90).until(
+            EC.presence_of_element_located((By.ID, "pane-side"))
+        )
+        print("Sesión iniciada correctamente.")
+
+    def visitar_numeros(self):
+        for restaurante in self.lista_restaurantes:
+            telefono = restaurante.get("telefono", "").replace(" ", "")
+            if not telefono:
+                continue
+
+            mensaje = self.crear_mensaje(restaurante)
+            if not mensaje:
+                continue
+
+            print("\nGenerando mensaje para:", restaurante.get("nombre"))
+            print("Mensaje generado:\n", mensaje)
+
+            url_whatsapp = f"https://wa.me/34{telefono}?text={mensaje.replace(' ', '%20')}"
+            self.driver.execute_script("window.open('');")
+            self.driver.switch_to.window(self.driver.window_handles[-1])
+            self.driver.get(url_whatsapp)
+
+            time.sleep(2)  # espera 2 segundos por número

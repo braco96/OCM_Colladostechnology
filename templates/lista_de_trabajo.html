@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lista de Trabajo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+    }
+    h1 {
+      text-align: left;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .btn {
+      padding: 5px 10px;
+      margin: 5px 2px;
+      cursor: pointer;
+      border: none;
+      border-radius: 3px;
+      background-color: #e7e7e7;
+    }
+    .filtro-container {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lista de Trabajo</h1>
+
+  <div>
+    <button id="btnTrasladarLL" class="btn">Trasladar datos a Llamadas</button>
+    <button id="btnGenerarPDF" class="btn">Generar PDF</button>
+  </div>
+
+  <div class="filtro-container">
+    <button id="btnPorLlamar" class="btn">Por Llamar</button>
+    <button id="btnEnProceso" class="btn">En Proceso</button>
+    <button id="btnFinalizados" class="btn">Finalizados</button>
+  </div>
+
+  <table>
+    <thead id="table-head">
+      <tr>
+        <th>Acción</th>
+        <th>ID Google Maps</th>
+        <th>Nombre</th>
+        <th>Enlace</th>
+        <th>Teléfono</th>
+        <th>urls_intermediarios</th>
+      </tr>
+    </thead>
+    <tbody id="table-body">
+      <!-- Datos dinámicos -->
+    </tbody>
+  </table>
+
+  <script>
+    let currentData = [];
+
+    async function cargarDatosListaTrabajo(filtro) {
+      let endpoint = "";
+      if (filtro === "0") {
+        endpoint = '/restaurantes_google';
+      } else if (filtro === "en_proceso") {
+        endpoint = '/restaurantes_en_proceso';
+      } else if (filtro === "finalizados") {
+        endpoint = '/restaurantes_finalizados';
+      } else if (filtro === "trasladarllamadas") {
+        endpoint = '/restaurantes_activo';
+      }
+
+      try {
+        const response = await fetch(endpoint);
+        const data = await response.json();
+        currentData = data;
+
+        const tableBody = document.getElementById('table-body');
+        tableBody.innerHTML = '';
+
+        if (data.length > 0) {
+          data.forEach(item => {
+            const { id_googlemaps, nombre,link_googlemaps, telefono, urls_intermediarios } = item;
+
+            if (id_googlemaps ||nombre|| link_googlemaps || telefono || urls_intermediarios ) {
+              const tr = document.createElement('tr');
+
+              const tdAccion = document.createElement('td');
+              const btnLlamar = document.createElement('button');
+              btnLlamar.textContent = "Llamar";
+              btnLlamar.className = "btn";
+              btnLlamar.addEventListener("click", function () {
+                localStorage.setItem("selectedRow", JSON.stringify(item));
+                localStorage.setItem("fecha_inicio", new Date().toISOString());
+                window.open("/cuestionario", "_blank");
+              });
+              tdAccion.appendChild(btnLlamar);
+              tr.appendChild(tdAccion);
+
+              const tdId = document.createElement('td');
+              tdId.textContent = id_googlemaps || '';
+              tr.appendChild(tdId);
+              const tdnombre = document.createElement('td');
+              tdnombre.textContent= nombre||'';
+              tr.appendChild(tdnombre);
+              const tdLink = document.createElement('td');
+              if (link_googlemaps) {
+                const enlace = document.createElement('a');
+                enlace.href = link_googlemaps;
+                enlace.textContent = "Enlace";
+                enlace.target = "_blank";
+                tdLink.appendChild(enlace);
+              }
+              tr.appendChild(tdLink);
+
+              const tdTelefono = document.createElement('td');
+              tdTelefono.textContent = telefono || '';
+              tr.appendChild(tdTelefono);
+              const tdUrls = document.createElement('td');
+              const tdUrl = document.createElement('td');
+              tdUrl.textContent= urls_intermediarios || ''
+              const arrayLinks = new Array (JSON.parse(urls_intermediarios));
+              if (Array.isArray(arrayLinks)) { 
+                arrayLinks.forEach(url => { 
+                  const enlace = document.createElement('a');
+                  enlace.href = url;
+                  enlace.textContent = url; 
+                  enlace.target = "_blank";
+                  tr.appendChild(tdUrls);
+                });
+              }
+              
+
+              tableBody.appendChild(tr);
+            }
+          });
+        } else {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 5;
+          cell.textContent = "No se encontraron datos.";
+          row.appendChild(cell);
+          tableBody.appendChild(row);
+        }
+      } catch (error) {
+        console.error("Error al cargar datos:", error);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("btnPorLlamar").addEventListener("click", () => cargarDatosListaTrabajo("0"));
+      document.getElementById("btnEnProceso").addEventListener("click", () => cargarDatosListaTrabajo("en_proceso"));
+      document.getElementById("btnFinalizados").addEventListener("click", () => cargarDatosListaTrabajo("finalizados"));
+      document.getElementById("btnTrasladarLL").addEventListener("click", () => cargarDatosListaTrabajo("trasladarllamadas"));
+
+      document.getElementById("btnGenerarPDF").addEventListener("click", async function () {
+        try {
+          const response = await fetch("/api/generar_pdf", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ datos: currentData })
+          });
+          if (!response.ok) throw new Error("Error en la generación del PDF");
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "reporte.pdf";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("Error al generar PDF:", error);
+        }
+      });
+
+      // Carga inicial
+      cargarDatosListaTrabajo("0");
+    });
+  </script>
+</body>
+</html>

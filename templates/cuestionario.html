@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuestionario</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .radio-group {
+      display: flex;
+      gap: 20px;
+    }
+    .form-buttons {
+      text-align: right;
+    }
+    .form-buttons button {
+      padding: 8px 12px;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Cuestionario</h2>
+  <form id="form-cuestionario">
+    <!-- Campo oculto para el id del restaurante -->
+    <input type="hidden" id="id_restaurante" name="id_restaurante">
+    <!-- Campo oculto para el id del agente (fijado a 1) -->
+    <input type="hidden" id="id_agente" name="id_agente" value="1">
+    <!-- Campo oculto para la fecha de inicio de la llamada -->
+    <input type="hidden" id="fecha_inicio" name="fecha_inicio">
+    
+    <div class="form-group">
+      <label for="telefono">Teléfono</label>
+      <input type="text" id="telefono" name="telefono" readonly>
+    </div>
+    <div class="form-group">
+      <label for="direccion">Dirección del Local</label>
+      <input type="text" id="direccion" name="direccion" readonly>
+    </div>
+    <!-- Eliminamos el campo "porcentaje de interés" según lo solicitado -->
+    <div class="form-group">
+      <label>Estado</label>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="estado" value="Interesado"> Interesado
+        </label>
+        <label>
+          <input type="radio" name="estado" value="No interesado"> No interesado
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="tiene_repartidores">¿Tiene repartidores?</label>
+      <select id="tiene_repartidores" name="tiene_repartidores">
+        <option value="si">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="cantidad_pedidos">Cantidad de pedidos aproximadamente vía telefónica</label>
+      <input type="number" id="cantidad_pedidos" name="cantidad_pedidos" min="0">
+    </div>
+    <fieldset>
+      <legend>Cliente</legend>
+      <div class="form-group">
+        <label for="cliente_nombre">Nombre del Cliente</label>
+        <input type="text" id="cliente_nombre" name="cliente_nombre">
+      </div>
+      <div class="form-group">
+        <label for="cliente_contacto">Datos de contacto</label>
+        <input type="text" id="cliente_contacto" name="cliente_contacto">
+      </div>
+      <div class="form-group">
+        <label for="porcentaje_interes">Porcentaje de interés (1-10)</label>
+        <input type="number" id="porcentaje_interes" name="porcentaje_interes" min="1" max="10">
+      </div>
+    </fieldset>
+    <div class="form-group">
+      <label for="informaciones_adicionales">Informaciones adicionales</label>
+      <textarea id="informaciones_adicionales" name="informaciones_adicionales" rows="4"></textarea>
+    </div>
+    <div class="form-buttons">
+      <button type="button" onclick="guardarCuestionario()">Guardar</button>
+      <button type="button" onclick="cancelarCuestionario()">Cancelar</button>
+    </div>
+  </form>
+  <script>
+    window.onload = function() {
+      // Recuperamos el registro seleccionado y la fecha de inicio (guardados desde la lista)
+      const stored = localStorage.getItem("selectedRow");
+      if (stored) {
+        const row = JSON.parse(stored);
+        console.log("Datos heredados del registro:", row);
+        // Intentamos obtener primero 'id_justeat', luego 'id', luego 'id_restaurante'
+        const restaurantId = row.id_justeat || row.id || row.id_restaurante;
+        if (!restaurantId) {
+          console.error("No se encontró un identificador válido en el registro seleccionado.");
+        }
+        document.getElementById('id_restaurante').value = restaurantId;
+        document.getElementById('telefono').value = row.contacto || row.telefono || "";
+        document.getElementById('direccion').value = row.direccion || "";
+        document.getElementById('cliente_nombre').value = row.nombre || "";
+        document.getElementById('cliente_contacto').value = row.contacto || row.telefono || "";
+        const fechaInicio = localStorage.getItem("fecha_inicio");
+        if (fechaInicio) {
+          document.getElementById('fecha_inicio').value = fechaInicio;
+        }
+        console.log("Fecha de inicio heredada:", localStorage.getItem("fecha_inicio"));
+        localStorage.removeItem("selectedRow");
+        localStorage.removeItem("fecha_inicio");
+      } else {
+        console.warn("No se encontraron datos heredados en localStorage.");
+      }
+    };
+
+    async function guardarCuestionario() {
+      const form = document.getElementById('form-cuestionario');
+      const formData = new FormData(form);
+      const data = {};
+      formData.forEach((value, key) => { data[key] = value; });
+      // Asignar automáticamente la fecha_fin (hora actual)
+      data.fecha_fin = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      console.log("Datos del formulario al guardar:", data);
+      const id = document.getElementById('id_restaurante').value;
+      if (!id || id === "undefined") {
+        alert("Error: No se encontró un identificador válido para el restaurante.");
+        return;
+      }
+      try {
+        // Enviar una única petición POST a /api/procesar_llamadas con los datos necesarios
+        const estadoRadio = document.querySelector('input[name="estado"]:checked');
+        let estado = "";
+        if (estadoRadio) {
+          estado = estadoRadio.value;
+        }
+        const response = await fetch(`http://127.0.0.1:5000/api/procesar_llamadas`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_justeat: id, estado: estado, datos: data })
+        });
+        const result = await response.json();
+        console.log("Respuesta del servidor:", result);
+        // Enviar mensaje a la ventana padre (Lista de Trabajo) según el estado
+        if (window.opener) {
+          if (estado.toLowerCase() === "interesado") {
+            window.opener.alert("Intermediario interesado guardado.");
+          } else {
+            window.opener.alert("Cliente no interesado eliminado.");
+          }
+        }
+        alert(result.mensaje);
+        window.close();
+      } catch (error) {
+        console.error("Error al guardar el cuestionario:", error);
+      }
+    }
+
+    function cancelarCuestionario() {
+      window.close();
+    }
+  </script>
+</body>
+</html>

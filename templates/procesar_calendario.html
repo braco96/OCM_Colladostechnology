@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Procesar Calendario</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* Estilos para organizar la vista */
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .table-container {
+      flex: 2;
+    }
+    .action-buttons {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+    }
+    /* Estilo para marcar la fila seleccionada */
+    tr.selected {
+      background-color: #f0f8ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Procesar Calendario</h1>
+
+  <!-- Botón de Seleccionar Todo -->
+  <div>
+    <button id="btnSelectAll" class="btn">Seleccionar Todo</button>
+  </div>
+  
+  <!-- Contenedor principal con la tabla y los botones de acción -->
+  <div class="container">
+    <!-- Tabla para mostrar los datos -->
+    <div class="table-container">
+      <table>
+        <thead id="table-head">
+          <!-- Se generará dinámicamente -->
+        </thead>
+        <tbody id="table-body">
+          <!-- Se generará dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Botones de acción: únicamente Trasladar datos y Procesar -->
+    <div class="action-buttons">
+      <button id="btnTrasladarLO" class="btn">Trasladar datos</button>
+      <button id="btnProcesar" class="btn">Procesar</button>
+    </div>
+  </div>
+
+  <!-- Se carga el archivo JavaScript que contiene la lógica de la tabla -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  
+  <!-- Script adicional para configurar los botones en este HTML -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Botón para seleccionar todas las filas
+      const btnSelectAll = document.getElementById("btnSelectAll");
+      if (btnSelectAll) {
+        btnSelectAll.addEventListener("click", function() {
+          toggleSelectAll(true);
+        });
+      }
+      
+      // Botón para trasladar datos (usa el endpoint '/restaurantes_activo')
+      const btnTrasladar = document.getElementById("btnTrasladarLO");
+      if (btnTrasladar) {
+        btnTrasladar.addEventListener("click", function() {
+          // Se utiliza el mismo método que en lista_de_trabajo, con el parámetro "trasladar llamadas"
+          cargarDatos("trasladarllamadas");
+        });
+      }
+      
+      // Botón para procesar (envía datos a '/api/procesar_horarios')
+      const btnProcesar = document.getElementById("btnProcesar");
+      if (btnProcesar) {
+        btnProcesar.addEventListener("click", function() {
+          // Se envía la acción "procesar" para que en el back se invoque /api/procesar_horarios
+          enviarDatosAccion("procesar_horario");
+        });
+      }
+      
+      // Carga inicial de datos (opcional)
+      if (document.getElementById("table-head") && document.getElementById("table-body")) {
+        cargarDatos("trasladarllamadas");
+      }
+    });
+  </script>
+</body>
+</html>

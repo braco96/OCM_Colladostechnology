@@ -1,0 +1,44 @@
+/* Estilos generales */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 10px;
+  }
+  
+  /* Título principal */
+  h1 {
+    text-align: left;
+  }
+  
+  /* Estilos para la tabla */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #f4f4f4;
+  }
+  
+  /* Botones */
+  .btn {
+    padding: 5px 10px;
+    margin: 5px 2px;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    background-color: #e7e7e7;
+  }
+  
+  /* Contenedor para filtros */
+  .filtro-container {
+    margin-bottom: 10px;
+  }
+  
